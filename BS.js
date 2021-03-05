@@ -30,9 +30,9 @@ var model = {
   shipsSunk: 0,
   shipLength: 3,
   ships: [
-    {locations: ["06", "16", "26"], hits: ["","",""]},
-    {locations: ["24", "34", "44"], hits: ["","",""]},
-    {locations: ["10", "11", "12"], hits: ["","",""]}
+    {locations: ["0", "0", "0"], hits: ["","",""]},
+    {locations: ["0", "0", "0"], hits: ["","",""]},
+    {locations: ["0", "0", "0"], hits: ["","",""]}
   ],
   fire: function(guess) {
     for (var i = 0; i<this.numShips; i++) {
@@ -61,13 +61,50 @@ var model = {
       }
     }
     return true;
+  },
+  generateShipLocations: function() {
+    var locations;
+    for (var i=0; i<this.numShips; i++) {
+      do {
+        locations = this.generateShip();
+      } while (this.collision(locations));
+      this.ships[i].locations = locations;
+    }
+  },
+  generateShip: function() {
+    var direction = Math.floor(Math.random() * 2);
+    var row, col;
+
+    if (direction===1) {
+      row = Math.floor(Math.random() * this.boardSize);
+      col = Math.floor(Math.random() * (this.boardSize-this.shipLength));
+    } else {
+      row = Math.floor(Math.random() * (this.boardSize-this.shipLength));
+      col = Math.floor(Math.random() * this.boardSize);
+    }
+
+    var newShipLocations = [];
+    for (var i = 0; i<this.shipLength; i++) {
+      if (direction===1) {
+        newShipLocations.push(row+""+(col+i));
+      }else {
+        newShipLocations.push((row+i)+""+col);
+      }
+    }
+    return newShipLocations;
+  },
+  collision: function(locations) {
+    for (var i=0; i<this.numShips; i++) {
+      var ship = model.ships[i];
+      for (var j=0; j<this.shipLength; j++) {
+        if (ship.locations.indexOf(locations[j])>=0) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 };
-
-// model.fire("53");
-// model.fire("06");
-// model.fire("16");
-// model.fire("26");
 
 var controller = {
   miss: 0,
@@ -112,13 +149,28 @@ function parseGuess(guess) {
   return null;
 }
 
-controller.processGuesses("A0");
-controller.processGuesses("A6");
-controller.processGuesses("B6");
-controller.processGuesses("C6");
-controller.processGuesses("C4");
-controller.processGuesses("D4");
-controller.processGuesses("E4");
-controller.processGuesses("B0");
-controller.processGuesses("B1");
-controller.processGuesses("B2");
+function init() {
+  var fireButton = document.getElementById("fireButton");
+  fireButton.onclick = handleFireButton;
+  var guessInput = document.getElementById("guessInput");
+  guessInput.onkeypress = handleKeyPress;
+
+  model.generateShipLocations();
+}
+
+function handleKeyPress(e) {
+  var fireButton = document.getElementById("fireButton");
+  if (e.keyCode ==13) {
+    fireButton.click();
+    return false;
+  }
+}
+
+function handleFireButton() {
+  var guessInput = document.getElementById("guessInput");
+  var guess = guessInput.value;
+  controller.processGuesses (guess);
+  guessInput.value = "";
+}
+
+window.onload = init;
